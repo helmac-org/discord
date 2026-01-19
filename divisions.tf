@@ -1,20 +1,138 @@
 locals {
   divize = [
-    { name = "hradební-divize", color = { clen = 1146986, garant = 1752220 } },
-    { name = "hospoda", color = { clen = 2067276, garant = 3066993 } },
-    { name = "mimobitevní-program", color = { clen = 0, garant = 0 } },
-    { name = "kuchyň", color = { clen = 7419530, garant = 10181046 } },
-    { name = "otrocké-práce", color = { clen = 11342935, garant = 15277667 } },
-    { name = "školka", color = { clen = 12745742, garant = 15844367 } },
-    { name = "registračka", color = { clen = 11027200, garant = 15105570 } },
-    { name = "zázemí", color = { clen = 10038562, garant = 15158332 } },
-    { name = "marketing", color = { clen = 11053224, garant = 4013373 } },
-    { name = "příprava-bitvy", color = { clen = 6124002, garant = 4148170 } },
-    { name = "rekvizity", color = { clen = 2123412, garant = 3447003 } },
-    { name = "pravidla-bitvy", color = { clen = 0, garant = 15277667 } },
-    { name = "turnaje", color = { clen = 2123412, garant = 3447003 } },
-    { name = "zdravotníci", color = { clen = 2123412, garant = 3447003 } },
-    { name = "harém", color = { clen = 11342935, garant = 15277667 } },
-    { name = "ritual", color = { clen = 0, garant = 0 } }
+    {
+      name  = "hradební-divize"
+      color = { clen = 1146986, garant = 1752220 }
+      onboarding = {
+        description = "Chci technicky plánovat hradbu - navrhovat a počítat"
+        emoji_name  = "🏰"
+        title       = "Hradební divize"
+      }
+    },
+    {
+      name  = "hospoda"
+      color = { clen = 2067276, garant = 3066993 }
+      onboarding = {
+        description = "Chci řešit hospodu, rozpis směn, co se bude pít, židoknihu"
+        emoji_name  = "🍻"
+        title       = "Hospoda"
+      }
+    },
+    {
+      name  = "mimobitevní-program"
+      color = { clen = 0, garant = 0 }
+    },
+    {
+      name  = "kuchyň"
+      color = { clen = 7419530, garant = 10181046 }
+      onboarding = {
+        description = "Chci kecat do jídelníčku a kuchyně"
+        emoji_name  = "🧑‍🍳"
+        title       = "Kuchyň"
+      }
+    },
+    {
+      name  = "otrocké-práce"
+      color = { clen = 11342935, garant = 15277667 }
+      onboarding = {
+        description = "Chci řešit larpík pro otroky a organizaci otroků obecně"
+        emoji_name  = "🏗️"
+        title       = "Otrocká práce"
+      }
+    },
+    {
+      name  = "školka"
+      color = { clen = 12745742, garant = 15844367 }
+      onboarding = {
+        description = "Mám zájem kecat do toho, jak bude postaráno o děti"
+        emoji_name  = "🐣"
+        title       = "Školka"
+      }
+    },
+    {
+      name  = "registračka"
+      color = { clen = 11027200, garant = 15105570 }
+      onboarding = {
+        description = "Potřebuju mluvit do toho, jak vypadá a funguje registrace"
+        emoji_name  = "🔖"
+        title       = "Registračka"
+      }
+    },
+    {
+      name  = "zázemí"
+      color = { clen = 10038562, garant = 15158332 }
+      onboarding = {
+        description = "Chci domlouvat věci okolo tábora: rozmístění tábořiště, technické zajištění, elektro, atd."
+        emoji_name  = "⛺"
+        title       = "Zázemí"
+      }
+    },
+    {
+      name  = "marketing"
+      color = { clen = 11053224, garant = 4013373 }
+      onboarding = {
+        description = "Web, socky, propagance a podobné věci"
+        emoji_name  = "🧲"
+        title       = "Marketing"
+      }
+    },
+    {
+      name  = "příprava-bitvy"
+      color = { clen = 6124002, garant = 4148170 }
+      onboarding = {
+        description = "Chci řešit bitvu nebo mám nápad na bitevní quest"
+        emoji_name  = "🧙"
+        title       = "Příprava bitvy"
+      }
+    },
+    {
+      name  = "rekvizity"
+      color = { clen = 2123412, garant = 3447003 }
+      onboarding = {
+        description = "Chci se domlouvat na výrobě rekvizit a přiložit ruku k dílu."
+        emoji_name  = "🧨"
+        title       = "Rekvizity"
+      }
+    },
+    {
+      name  = "pravidla-bitvy"
+      color = { clen = 0, garant = 15277667 }
+      onboarding = {
+        description = "Zajímám se o úpravy pravidel, chci řešit jejich úpravy a změny"
+        emoji_name  = "🧑‍⚖️"
+        title       = "Pravidla bitvy"
+      }
+    },
+    {
+      name  = "turnaje"
+      color = { clen = 2123412, garant = 3447003 }
+      onboarding = {
+        description = "Chci plánovat, kdy a co se bude dít mimo bitvu"
+        emoji_name  = "⚔️"
+        title       = "Turnaje a program mimo bitvu"
+      }
+    },
+    {
+      name  = "zdravotníci"
+      color = { clen = 2123412, garant = 3447003 }
+      onboarding = {
+        description = "Chci kecat do zachraňování životů"
+        emoji_name  = "🏥"
+        title       = "Zdravotníci"
+      }
+    },
+    {
+      name  = "harém"
+      color = { clen = 11342935, garant = 15277667 }
+      onboarding = {
+        description = "Chci dělat harém krásnější a ještě víc relaxační"
+        emoji_name  = "💃"
+        title       = "Harém"
+      }
+    },
+    {
+      name  = "ritual"
+      color = { clen = 0, garant = 0 }
+    }
   ]
 }
