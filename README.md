@@ -1,163 +1,147 @@
-# Discord Server Terraform Configuration
+# Discord Infrastructure as Code
 
-This repository contains a declarative Terraform configuration for managing a Discord server infrastructure.
+Manage your entire Discord server (Helmáč) as declarative Terraform configuration. Add, modify, or remove divisions, channels, roles, and permissions through code—everything syncs automatically to Discord.
 
-## Prerequisites
+## Quick Start
 
-1. **Discord Bot Token**: You need a Discord bot with appropriate permissions
-   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
-   - Create a new application or use an existing one
-   - Go to the "Bot" section and copy the token
-   - Invite the bot to your server with Administrator permissions
+**To configure new divisions or teams:** Simply edit [divisions.tf](divisions.tf) and open a pull request. The rest is automated.
 
-2. **Local Terraform Provider**: This configuration uses a local Discord provider
-   - Ensure your provider binary is installed at: `~/.terraform.d/plugins/localhost/local/discord/<VERSION>/<OS>_<ARCH>/`
-   - Or configure the provider source path appropriately
+All channels, roles, permissions, and onboarding flows are generated automatically from the division definitions.
 
-3. **Server ID**: Your Discord server (guild) ID
-   - Enable Developer Mode in Discord (User Settings → Advanced → Developer Mode)
-   - Right-click your server and select "Copy ID"
+## How It Works
+
+This project uses Terraform to manage:
+
+- **Shared channels** with full permission setup
+- **Individual division channels** (teams) with dedicated channels, roles, and permissions
+- **Automated onboarding** for new members to self-select divisions
+- **Role hierarchy** with member and manager roles per division
+- **Channel permissions** configured declaratively
+- **CI/CD pipeline** with encrypted state management
+
+### Architecture
+
+```plain
+divisions.tf (single source of truth)
+    ↓
+    ├─→ channels.tf    - Creates text channels + permissions
+    ├─→ roles.tf       - Creates member & manager roles
+    └─→ onboarding.tf  - Generates self-service onboarding
+```
 
 ## Setup
 
-### Option 1: Using Environment Variables (Recommended)
+Do only if you need to replicate the behavior outside of our Discord server, or if you need to apply changes from local machine (discouraged).
 
-1. **Set up environment variables**:
-   ```bash
-   cp .env.example .env
-   ```
+### Prerequisites
 
-2. **Edit .env** and add your values:
-   ```bash
-   TF_VAR_discord_token="YOUR_BOT_TOKEN"
-   TF_VAR_server_id="YOUR_SERVER_ID"
-   TF_VAR_server_name="Your Server Name"
-   ```
+1. **Discord Bot with Admin permissions**
+   - Create at [Discord Developer Portal](https://discord.com/developers/applications)
+   - Copy bot token and server ID (enable Developer Mode in Discord)
 
-3. **Load the environment variables**:
+2. **Terraform 1.0+**
 
-   ```bash
-   export $(grep -v '^#' .env | xargs)
-   ```
+### Installation
 
-   Or if you prefer using direnv, create a `.envrc` file:
+```bash
+# 1. Configure credentials
+cp .env.example .env
+# Edit .env with your DISCORD_BOT_TOKEN and DISCORD_SERVER_ID
+source .env
 
-   ```bash
-   dotenv
-   ```
+# 2. Install Discord provider
+./scripts/setup.sh
 
-   Then run `direnv allow`
-
-4. **Install the local provider** (if not already done):
-   - Place your provider binary in the correct directory structure
-   - The provider should be at: `~/.terraform.d/plugins/local/lucky3028/discord/0.0.1/<OS>_<ARCH>/terraform-provider-discord`
-
-5. **Initialize Terraform**:
-   ```bash
-   terraform init
-   ```
-
-### Option 2: Using terraform.tfvars File
-
-1. **Copy the example variables file**:
-   ```bash
-   cp terraform.tfvars.example terraform.tfvars
-   ```
-
-2. **Edit terraform.tfvars** and add your values:
-
-   ```hcl
-   discord_token = "YOUR_BOT_TOKEN"
-   server_id     = "YOUR_SERVER_ID"
-   server_name   = "Your Server Name"
-   ```
-
-3. Follow steps 4-5 from Option 1 above.
+# 3. Initialize Terraform
+terraform init
+```
 
 ## Usage
 
-### Import Existing Server Configuration
+### Adding a New Division
 
-To import your existing Discord server configuration:
+Edit [divisions.tf](divisions.tf) and add to the `locals.divize` list:
 
-```bash
-# Import the server
-terraform import discord_server.main YOUR_SERVER_ID
-
-# Import channels (example)
-terraform import discord_text_channel.general CHANNEL_ID
-
-# Import roles (example)
-terraform import discord_role.moderator ROLE_ID
+```hcl
+{
+  name  = "new-team"
+  color = {
+    clen   = 2067276  # Member role color (terraform is unable to handle HEX colors, use DEC instead)
+    garant = 3066993  # Manager role color
+  }
+  onboarding = {
+    description = "Help with new team tasks"
+    emoji_name  = "🆕"
+    title       = "New Team"
+  }
+}
 ```
 
-### View Changes
+This automatically creates:
+
+- Text channel `#new-team`
+- Role `Člen - new-team` (Member)
+- Role `Garant - new-team` (Manager)
+- Channel permissions for both roles
+- Onboarding prompt for self-assignment
+
+### Deploy Changes
 
 ```bash
+# Preview changes
 terraform plan
-```
 
-### Apply Configuration
-
-```bash
+# Apply to Discord
 terraform apply
 ```
 
-### Export Current State
+### Import Existing Resources
 
-To dump your full server configuration, you can use Terraform's state commands:
+Helper scripts are provided for importing existing Discord infrastructure:
 
 ```bash
-# Show all resources
-terraform state list
+# Import division roles
+./scripts/import-division.sh garant hospoda ROLE_ID
 
-# Show specific resource details
-terraform state show discord_server.main
+# Import channel permissions
+./scripts/import-channel-permission.sh info INFO_ID
+
+# Import division channel permissions
+./scripts/import-division-channel-permission.sh
 ```
 
-## Configuration Structure
+## CI/CD
 
-- [versions.tf](versions.tf) - Terraform and provider version requirements
-- [provider.tf](provider.tf) - Discord provider configuration
-- [variables.tf](variables.tf) - Input variable definitions
-- [main.tf](main.tf) - Main Discord server resources (channels, roles, etc.)
-- [terraform.tfvars](terraform.tfvars) - Variable values (not committed, sensitive)
+GitHub Actions automatically:
 
-## Customization
+1. Decrypts Terraform state (GPG encrypted)
+2. Builds Discord provider from source
+3. Plans changes on every push to main
+4. Re-encrypts and stores state
 
-The [main.tf](main.tf) file contains example resources. Customize it to match your server structure:
+**Required secrets:**
 
-- **Categories**: Define channel categories
-- **Text Channels**: Configure text channels with topics and permissions
-- **Voice Channels**: Set up voice channels with bitrate and user limits
-- **Roles**: Create and manage server roles with permissions
-- **Channel Permissions**: Override permissions for specific roles/users
+- `DISCORD_BOT_TOKEN`
+- `DISCORD_SERVER_ID`
+- `ENCRYPTION_KEY` (GPG passphrase)
+
+## Project Structure
+
+| File                             | Purpose                                                  |
+| -------------------------------- | -------------------------------------------------------- |
+| [divisions.tf](divisions.tf)     | **Division definitions** (edit this to add/modify teams) |
+| [channels.tf](channels.tf)       | Channel creation and permission overrides                |
+| [roles.tf](roles.tf)             | Role definitions (global + division roles)               |
+| [permissions.tf](permissions.tf) | Reusable permission datasets                             |
+| [onboarding.tf](onboarding.tf)   | Server onboarding flow configuration                     |
+| [server.tf](server.tf)           | Main server resource                                     |
+| [provider.tf](provider.tf)       | Discord provider authentication                          |
+| [variables.tf](variables.tf)     | Input variable definitions                               |
+| [versions.tf](versions.tf)       | Terraform and provider version constraints               |
 
 ## Important Notes
 
-- **Never commit sensitive files** - Both terraform.tfvars and .env contain sensitive tokens
-- **Backup your state file** - The terraform.tfstate file contains your infrastructure state
-- **Test changes carefully** - Use `terraform plan` before applying
-- **Permission Numbers**: Discord uses bitwise permission integers. Refer to [Discord's permission documentation](https://discord.com/developers/docs/topics/permissions)
-
-## Common Permission Values
-
-```
-Administrator: 8
-Manage Channels: 16
-Manage Server: 32
-Manage Messages: 8192
-Send Messages: 2048
-View Channel: 1024
-```
-
-## Troubleshooting
-
-### Provider Not Found
-Ensure your provider binary is in the correct location and the version in [versions.tf](versions.tf) matches.
-
-### Authentication Failed
-Verify your bot token is correct and the bot is invited to your server with proper permissions.
-
-### Import Errors
-Make sure you're using the correct resource IDs from Discord.
+- **Never commit** `.env`, `terraform.tfvars`, or `terraform.tfstate` (contains sensitive data)
+- **Test first** - Always run `terraform plan` before `terraform apply`
+- **Encrypted state** - CI/CD uses GPG-encrypted state for security
+- **Provider source** - Built from [tumido/terraform-provider-discord](https://github.com/tumido/terraform-provider-discord) (branch: my-release)

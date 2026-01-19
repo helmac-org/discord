@@ -4,28 +4,28 @@ on:
   push:
 
 jobs:
-  artifact_encrypted:
+  terraform:
     runs-on: ubuntu-latest
     name: Apply Terraform changes
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # - name: Download state from artifact
-      #   shell: bash
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     REPO="${{ github.repository }}"
-      #     ARTIFACT_URI="https://api.github.com/repos/$REPO/artifacts"
-      #     RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" -s $ARTIFACT_URI | jq -r '.artifacts[]')
-      #     if [ "$RESPONSE" ] ; then
-      #       LATEST_ARTIFACT_URI=$(echo $RESPONSE | jq -r 'select(.name=="Encrypted Terraform State") | .archive_download_url' | sort -r | head -n 1)
-      #       if [ "$LATEST_ARTIFACT_URI" ] ; then
-      #         curl -L -H "Authorization: token $TOKEN" -o terraform.tfstate.encrypted.zip $LATEST_ARTIFACT_URI
-      #         unzip -o terraform.tfstate.encrypted.zip
-      #       fi
-      #     fi
+      - name: Download state from artifact
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          ARTIFACT_URI="https://api.github.com/repos/$REPO/actions/artifacts"
+          RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" -s $ARTIFACT_URI | jq -r '.artifacts[]')
+          LATEST_ARTIFACT_URI=$(echo $RESPONSE | jq -r 'select(.name=="Encrypted Terraform State") | .archive_download_url' | sort -r | head -n 1)
+
+          curl -L -H "Authorization: token $GITHUB_TOKEN" -o terraform.tfstate.encrypted.zip $LATEST_ARTIFACT_URI
+          unzip -o terraform.tfstate.encrypted.zip
 
       - name: Decrypt state
         shell: bash
@@ -36,6 +36,18 @@ jobs:
 
       - name: Setup Go
         uses: actions/setup-go@v6
+        with:
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('scripts/setup.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Install local providers
         run: scripts/setup.sh

@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# scripts/import-channel-permission.sh <channel> <channel_id>
-# Example: scripts/import-channel-permission.sh info 1234567890
+# scripts/import-channel-permission.sh
+# Example: scripts/import-channel-permission.sh
 
 
 # List of all divisions with their IDs (parallel arrays)
