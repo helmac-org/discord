@@ -3,8 +3,8 @@ terraform {
 
   required_providers {
     discord = {
-      source  = "local/lucky3028/discord"
-      version = "~> 0.0.1"
+      source  = "local/tumido/discord"
+      version = "~> 1.0.0"
     }
   }
 }
