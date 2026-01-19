@@ -1,0 +1,30 @@
+name: Setup Terraform enviroment
+description: Setup Terraform enviroment
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        cache: false
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('scripts/setup.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install local providers
+      shell: bash
+      run: scripts/setup.sh
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Initialize
+      shell: bash
+      run: terraform init

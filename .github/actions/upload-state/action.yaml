@@ -1,0 +1,23 @@
+name: Upload state
+description: Encrypt state and upload it to artifact
+inputs:
+  encryption_key:
+    description: "Encryption key"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Encrypt state
+      shell: bash
+      env:
+        ENCRYPTION_KEY: ${{ inputs.encryption_key }}
+      run: |
+        rm terraform.tfstate.encrypted
+        gpg --batch --symmetric --cipher-algo AES256 --passphrase=$ENCRYPTION_KEY --output terraform.tfstate.encrypted terraform.tfstate
+
+    - name: Upload state as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Encrypted Terraform State
+        path: "terraform.tfstate.encrypted"
+        overwrite: true

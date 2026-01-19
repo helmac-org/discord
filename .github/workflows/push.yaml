@@ -15,48 +15,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download state from artifact
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REPO="${{ github.repository }}"
-          ARTIFACT_URI="https://api.github.com/repos/$REPO/actions/artifacts"
-          RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" -s $ARTIFACT_URI | jq -r '.artifacts[]')
-          LATEST_ARTIFACT_URI=$(echo $RESPONSE | jq -r 'select(.name=="Encrypted Terraform State") | .archive_download_url' | sort -r | head -n 1)
-
-          curl -L -H "Authorization: token $GITHUB_TOKEN" -o terraform.tfstate.encrypted.zip $LATEST_ARTIFACT_URI
-          unzip -o terraform.tfstate.encrypted.zip
-
-      - name: Decrypt state
-        shell: bash
-        env:
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        run: |
-          gpg --batch --decrypt --passphrase=$ENCRYPTION_KEY --output terraform.tfstate terraform.tfstate.encrypted
-
-      - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: ./.github/actions/download-state
         with:
-          cache: false
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('scripts/setup.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Install local providers
-        run: scripts/setup.sh
+          encryption_key: ${{ secrets.ENCRYPTION_KEY }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Initialize
-        run: terraform init
+        uses: ./.github/actions/setup
 
       - name: Validate
         run: terraform validate
@@ -75,17 +40,7 @@ jobs:
       #   run: |
       #     terraform apply -auto-approve
 
-      - name: Encrypt state
-        shell: bash
-        env:
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        run: |
-          rm terraform.tfstate.encrypted
-          gpg --batch --symmetric --cipher-algo AES256 --passphrase=$ENCRYPTION_KEY --output terraform.tfstate.encrypted terraform.tfstate
-
       - name: Upload state as artifact
-        uses: actions/upload-artifact@v4
+        uses: ./.github/actions/upload-state
         with:
-          name: Encrypted Terraform State
-          path: "terraform.tfstate.encrypted"
-          overwrite: true
+          encryption_key: ${{ secrets.ENCRYPTION_KEY }}

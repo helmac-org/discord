@@ -1,0 +1,31 @@
+name: Download state
+description: Download state from artifact and decrypt it
+inputs:
+  encryption_key:
+    description: "Encryption key"
+    required: true
+  gh_token:
+    description: "Github access token"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Download state from artifact
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.gh_token }}
+      run: |
+        REPO="${{ github.repository }}"
+        ARTIFACT_URI="https://api.github.com/repos/$REPO/actions/artifacts"
+        RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" -s $ARTIFACT_URI | jq -r '.artifacts[]')
+        LATEST_ARTIFACT_URI=$(echo $RESPONSE | jq -r 'select(.name=="Encrypted Terraform State") | .archive_download_url' | sort -r | head -n 1)
+
+        curl -L -H "Authorization: token $GITHUB_TOKEN" -o terraform.tfstate.encrypted.zip $LATEST_ARTIFACT_URI
+        unzip -o terraform.tfstate.encrypted.zip
+
+    - name: Decrypt state
+      shell: bash
+      env:
+        ENCRYPTION_KEY: ${{ inputs.encryption_key }}
+      run: |
+        gpg --batch --decrypt --passphrase=$ENCRYPTION_KEY --output terraform.tfstate terraform.tfstate.encrypted
