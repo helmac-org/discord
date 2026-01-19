@@ -134,5 +134,14 @@ locals {
       name  = "ritual"
       color = { clen = 0, garant = 0 }
     }
+    {
+      name  = "super-divize"
+      color = { clen = 0, garant = 0 }
+      onboarding = {
+        description = "Random text"
+        emoji_name  = "🤷"
+        title       = "Super!"
+      }
+    },
   ]
 }
