@@ -1,0 +1,26 @@
+name: Don't let artifact expire
+on:
+  schedule:
+    - cron: "0 0 1 * *" # Run at midnight on the 1st of every month
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    name: Don't let artifact expire
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download state from artifact
+        uses: ./.github/actions/download-state
+        with:
+          encryption_key: ${{ secrets.ENCRYPTION_KEY }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload state as artifact
+        uses: ./.github/actions/upload-state
+        with:
+          encryption_key: ${{ secrets.ENCRYPTION_KEY }}
