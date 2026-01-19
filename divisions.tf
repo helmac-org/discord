@@ -134,5 +134,14 @@ locals {
       name  = "ritual"
       color = { clen = 0, garant = 0 }
     }
+    {
+  name  = "test"
+  color = { clen = , garant =  }
+  onboarding = {
+    description = "text text"
+    emoji_name  = "🤷"
+    title       = "Text"
+  }
+},
   ]
 }
