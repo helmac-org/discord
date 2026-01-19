@@ -133,6 +133,15 @@ locals {
     {
       name  = "ritual"
       color = { clen = 0, garant = 0 }
+    },
+    {
+      name  = "tak co teď?"
+      color = { clen = 0, garant = 0 }
+      onboarding = {
+        description = "Tohle je text pro onboarding"
+        emoji_name  = "🤷"
+        title       = "Nadpis do onboardingu"
+      }
     }
   ]
 }
