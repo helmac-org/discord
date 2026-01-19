@@ -1,0 +1,150 @@
+name: Handle Discord Commands
+on:
+  repository_dispatch:
+    types: [discord-command]
+
+jobs:
+  handle-command:
+    runs-on: ubuntu-latest
+    name: Process Discord command
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Handle nova-divize command
+        if: github.event.client_payload.command == 'nova-divize'
+        id: handle_command
+        env:
+          NAZEV: ${{ github.event.client_payload.data.nazev }}
+          GARANT_BARVA: ${{ github.event.client_payload.data.garantBarva }}
+          CLEN_BARVA: ${{ github.event.client_payload.data.clenBarva }}
+          ONBOARDING_NADPIS: ${{ github.event.client_payload.data.onboardingNadpis }}
+          ONBOARDING_TEXT: ${{ github.event.client_payload.data.onboardingText }}
+          ONBOARDING_EMOJI: ${{ github.event.client_payload.data.onboardingEmoji }}
+          USER: ${{ github.event.client_payload.user }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GH_TOKEN: ${{ secrets.DISCORD_BOT_GITHUB_PAT }}
+        run: |
+          echo "Processing nova-divize command"
+          echo "Název: $NAZEV"
+          echo "Garant barva: $GARANT_BARVA"
+          echo "Člen barva: $CLEN_BARVA"
+          echo "Onboarding nadpis: $ONBOARDING_NADPIS"
+          echo "Onboarding text: $ONBOARDING_TEXT"
+          echo "Onboarding emoji: $ONBOARDING_EMOJI"
+          echo "User: $USER"
+
+          # Set default values for colors if not provided
+          GARANT_BARVA="${GARANT_BARVA:-0}"
+          CLEN_BARVA="${CLEN_BARVA:-0}"
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a new branch
+          BRANCH_NAME="divize/${NAZEV}"
+          git checkout -b "$BRANCH_NAME"
+
+          # Build the new division entry conditionally with proper formatting
+          # First, remove the closing ] and } from the file
+          head -n -3 divisions.tf > divisions.tf.tmp
+          mv divisions.tf.tmp divisions.tf
+
+          # Then append the new entry with proper formatting
+          if [ -n "$ONBOARDING_NADPIS" ]; then
+            # With onboarding section
+            echo "    }," >> divisions.tf
+            echo "    {" >> divisions.tf
+            echo "      name  = \"${NAZEV}\"" >> divisions.tf
+            echo "      color = { clen = ${CLEN_BARVA}, garant = ${GARANT_BARVA} }" >> divisions.tf
+            echo "      onboarding = {" >> divisions.tf
+            echo "        description = \"${ONBOARDING_TEXT}\"" >> divisions.tf
+            echo "        emoji_name  = \"${ONBOARDING_EMOJI}\"" >> divisions.tf
+            echo "        title       = \"${ONBOARDING_NADPIS}\"" >> divisions.tf
+            echo "      }" >> divisions.tf
+            echo "    }" >> divisions.tf
+          else
+            # Without onboarding section
+            echo "    }," >> divisions.tf
+            echo "    {" >> divisions.tf
+            echo "      name  = \"${NAZEV}\"" >> divisions.tf
+            echo "      color = { clen = ${CLEN_BARVA}, garant = ${GARANT_BARVA} }" >> divisions.tf
+            echo "    }," >> divisions.tf
+          fi
+
+          # Add back the closing ] and }
+          echo "  ]" >> divisions.tf
+          echo "}" >> divisions.tf
+
+          # Commit the changes
+          git add divisions.tf
+          git commit -m "feat: přidat novou divizi ${NAZEV}
+
+          Vytvořeno pomocí Discord slash příkazu.
+          Vytvořil: ${USER}"
+
+          # Push the branch
+          git push -u origin "$BRANCH_NAME"
+
+          # Create pull request
+          PR_URL=$(gh pr create \
+            --title "feat: přidat divizi ${NAZEV}" \
+            --body "## Nová divize: ${NAZEV}
+
+          **Vytvořil:** ${USER}
+
+          ### Detaily
+          - **Název:** ${NAZEV}
+          - **Onboarding nadpis:** ${ONBOARDING_NADPIS}
+          - **Onboarding text:** ${ONBOARDING_TEXT}
+          - **Emoji:** ${ONBOARDING_EMOJI}
+          - **Garant barva:** ${GARANT_BARVA}
+          - **Člen barva:** ${CLEN_BARVA}
+
+          ---
+          🤖 Automaticky vytvořeno z Discord slash příkazu" \
+            --base main)
+
+          echo "result=success" >> $GITHUB_OUTPUT
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "workflow_url=$WORKFLOW_URL" >> $GITHUB_OUTPUT
+
+      - name: Send success response to Discord
+        if: steps.handle_command.outputs.result == 'success'
+        env:
+          WEBHOOK_URL: https://discord.com/api/v10/webhooks/${{ github.event.client_payload.application_id }}/${{ github.event.client_payload.interaction_token }}/messages/@original
+          NAZEV: ${{ github.event.client_payload.data.nazev }}
+          USER: ${{ github.event.client_payload.user }}
+          PR_URL: ${{ steps.handle_command.outputs.pr_url }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg nazev "$NAZEV" \
+            --arg user "$USER" \
+            --arg pr_url "$PR_URL" \
+            '{content: "✅ PR pro divizi **\($nazev)** bylo vytvořena!\n\n🔗 <\($pr_url)>"}')
+
+          curl -X PATCH "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
+
+      - name: Send error response to Discord
+        if: failure()
+        env:
+          WEBHOOK_URL: https://discord.com/api/v10/webhooks/${{ github.event.client_payload.application_id }}/${{ github.event.client_payload.interaction_token }}/messages/@original
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg workflow "$WORKFLOW_URL" \
+            '{content: "❌ Nastala chyba při vytváření divize.\n\n🔗 Zkontrolovat logy: <\($workflow)>"}')
+
+          curl -X PATCH "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
