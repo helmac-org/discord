@@ -31,13 +31,19 @@ divisions.tf (single source of truth)
 
 ## Setup
 
-Do only if you need to replicate the behavior outside of our Discord server, or if you need to apply changes from local machine (discouraged).
-
 ### Prerequisites
+
+For contributing:
+
+1. Gain access to `ENCRYPTION_KEY` and add it to `.env`.
+
+2. **Terraform 1.0+**
+
+For applying changes manually:
 
 1. **Discord Bot with Admin permissions**
    - Create at [Discord Developer Portal](https://discord.com/developers/applications)
-   - Copy bot token and server ID (enable Developer Mode in Discord)
+   - Copy bot token and server ID (enable Developer Mode in Discord) to `.env`
 
 2. **Terraform 1.0+**
 
@@ -46,11 +52,14 @@ Do only if you need to replicate the behavior outside of our Discord server, or 
 ```bash
 # 1. Configure credentials
 cp .env.example .env
-# Edit .env with your DISCORD_BOT_TOKEN and DISCORD_SERVER_ID
+# Edit .env with ENCRYPTION_KEY
 source .env
 
 # 2. Install Discord provider
 ./scripts/setup.sh
+
+# 3. Download latest available shared state
+./scripts/download-state.sh
 
 # 3. Initialize Terraform
 terraform init
@@ -86,6 +95,11 @@ This automatically creates:
 - Onboarding prompt for self-assignment
 
 ### Deploy Changes
+
+> ! This will only work if you have access to following secrets:
+>
+> `DISCORD_BOT_TOKEN`
+> `DISCORD_SERVER_ID`
 
 ```bash
 # Preview changes

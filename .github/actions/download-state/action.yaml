@@ -16,12 +16,9 @@ runs:
         GITHUB_TOKEN: ${{ inputs.gh_token }}
       run: |
         REPO="${{ github.repository }}"
-        ARTIFACT_URI="https://api.github.com/repos/$REPO/actions/artifacts"
-        RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN" -s $ARTIFACT_URI | jq -r '.artifacts[]')
-        LATEST_ARTIFACT_URI=$(echo $RESPONSE | jq -r 'select(.name=="Encrypted Terraform State") | .archive_download_url' | sort -r | head -n 1)
+        LATEST_ARTIFACT_URI=$(gh api repos/$REPO/actions/artifacts -q '.artifacts | map(select(.name=="Encrypted Terraform State")) | max_by(.updated_at) | .archive_download_url')
 
-        echo "Downloading state from: $LATEST_ARTIFACT_URI"
-        curl -L -H "Authorization: token $GITHUB_TOKEN" -o terraform.tfstate.encrypted.zip $LATEST_ARTIFACT_URI
+        gh api $LATEST_ARTIFACT_URI > terraform.tfstate.encrypted.zip
         unzip -o terraform.tfstate.encrypted.zip
 
     - name: Decrypt state

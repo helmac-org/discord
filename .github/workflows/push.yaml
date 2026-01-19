@@ -31,13 +31,15 @@ jobs:
         run: terraform validate
 
       - name: Plan
+        id: plan
         env:
           TF_VAR_discord_token: ${{ secrets.DISCORD_BOT_TOKEN }}
           TF_VAR_server_id: ${{ secrets.DISCORD_SERVER_ID }}
-        run: |
-          terraform plan
+        run: terraform plan -detailed-exitcode
+        continue-on-error: true
 
       - name: Apply
+        if: steps.plan.outcome == 'failure' && steps.plan.conclusion == 'success'
         env:
           TF_VAR_discord_token: ${{ secrets.DISCORD_BOT_TOKEN }}
           TF_VAR_server_id: ${{ secrets.DISCORD_SERVER_ID }}

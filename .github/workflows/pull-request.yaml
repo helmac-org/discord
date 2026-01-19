@@ -1,6 +1,6 @@
 name: Preview changes
 on:
-  pull_request:
+  pull_request_target:
 
 jobs:
   terraform:
@@ -9,9 +9,12 @@ jobs:
     permissions:
       actions: read
       contents: read
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }} # Checkout base branch (trusted)
 
       - name: Download state from artifact
         uses: ./.github/actions/download-state
@@ -22,15 +25,21 @@ jobs:
       - name: Setup Terraform
         uses: ./.github/actions/setup
 
+      - name: Checkout PR code
+        uses: actions/checkout@v4 # Now checkout PR code AFTER secrets are used
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          clean: false # Preserve files created by setup action
+
       - name: Validate
         run: terraform validate
 
       - name: Plan
-        env:
-          TF_VAR_discord_token: ${{ secrets.DISCORD_BOT_TOKEN }}
-          TF_VAR_server_id: ${{ secrets.DISCORD_SERVER_ID }}
+        env: # Just mock them, we're not refreshing state anyways
+          TF_VAR_discord_token: "foo"
+          TF_VAR_server_id: "bar"
         run: |
-          terraform plan -out .planfile
+          terraform plan -refresh=false -out .planfile
 
       - name: Post PR comment
         uses: borchero/terraform-plan-comment@v2
