@@ -182,6 +182,18 @@
           "clen": 0,
           "garant": 0
         }
+      },
+      {
+        "name": "workshopy",
+        "color": {
+          "clen": 0,
+          "garant": 0
+        },
+        "onboarding": {
+          "description": "Chceš si povídat o tom o čem se bude na Helmáči povídat?",
+          "emoji_name": "👩‍🏫",
+          "title": "Workshopy a přednášky"
+        }
       }
     ]
   }
