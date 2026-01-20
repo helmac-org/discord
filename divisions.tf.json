@@ -182,6 +182,18 @@
           "clen": 0,
           "garant": 0
         }
+      },
+      {
+        "name": "český text !!\"",
+        "color": {
+          "clen": 0,
+          "garant": 0
+        },
+        "onboarding": {
+          "description": "Spousta textu textu",
+          "emoji_name": "📆",
+          "title": "Napiš něco hezkého"
+        }
       }
     ]
   }
