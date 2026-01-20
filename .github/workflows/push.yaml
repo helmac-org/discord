@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "**.tf"
+      - "**.tf.json"
 
 jobs:
   terraform:
@@ -35,11 +36,11 @@ jobs:
         env:
           TF_VAR_discord_token: ${{ secrets.DISCORD_BOT_TOKEN }}
           TF_VAR_server_id: ${{ secrets.DISCORD_SERVER_ID }}
-        run: terraform plan -detailed-exitcode
+        run: terraform plan -detailed-exitcode -no-color
         continue-on-error: true
 
       - name: Apply
-        if: steps.plan.outcome == 'failure' && steps.plan.conclusion == 'success'
+        if: steps.plan.outputs.exitcode == '2'
         env:
           TF_VAR_discord_token: ${{ secrets.DISCORD_BOT_TOKEN }}
           TF_VAR_server_id: ${{ secrets.DISCORD_SERVER_ID }}
