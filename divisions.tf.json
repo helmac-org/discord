@@ -194,6 +194,18 @@
           "emoji_name": "👩‍🏫",
           "title": "Workshopy a přednášky"
         }
+      },
+      {
+        "name": "web",
+        "color": {
+          "clen": 0,
+          "garant": 0
+        },
+        "onboarding": {
+          "description": "jak vypada a co je ma webu",
+          "emoji_name": "🌐",
+          "title": "Web"
+        }
       }
     ]
   }
